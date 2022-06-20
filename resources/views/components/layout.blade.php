@@ -6,6 +6,7 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>{{ $title }} - Controle de Séries</title>
         <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/estilos.css') }}">
     </head>
 
     <body>
@@ -14,7 +15,12 @@
                 <a href="{{ route('series.index') }}" class="navbar-brand">Home</a>
 
                 @auth
-                    <a href="{{ route('logout') }}">Sair</a>
+                    <form action="{{ route('logout') }}" method="post">
+                        @csrf
+                        <button class="btn btn-link">
+                            Sair
+                        </button>
+                    </form>
                 @endauth
 
                 @guest
