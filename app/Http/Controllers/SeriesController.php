@@ -2,16 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SeriesFormRequest;
 use Illuminate\Http\Request;
-use App\Models\Serie;
+use App\Http\Middleware\Autenticador;
+use App\Models\{Series};
+use App\Repositories\SeriesRepository;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SeriesCreated;
+use App\Models\User;
 
 class SeriesController extends Controller
 {
-    public function index(){
-        
-        $series = Serie::query()->orderBy('nome')->get();
+    public function __construct(private SeriesRepository $repository)
+    {
+        $this->middleware('auth')->except('index');
+    }
 
-        return view('series.index')->with('series', $series);
+    public function index(Request $request){
+        
+        $series = Series::all();
+        $mensagemSucesso = session('mensagem.sucesso');
+
+        return view('series.index')->with('series', $series)
+            ->with('mensagemSucesso', $mensagemSucesso);
     }
 
     public function create()
@@ -19,10 +32,43 @@ class SeriesController extends Controller
         return view('series.create');
     }
 
-    public function store(Request $request)
+    public function store(SeriesFormRequest $request)
     {
-        Serie::create($request->all());
+        $coverPath = $request->hasFile('cover')
+            ? $request->file('cover')->store('series_cover', 'public')
+            : null;
+        $request->coverPath = $coverPath;
+        $serie = $this->repository->add($request);
+        \App\Events\SeriesCreated::dispatch(
+            $serie->nome,
+            $serie->id,
+            $request->seasonsQty,
+            $request->episodesPerSeason,
+        );
+        
+        return to_route('series.index')
+            ->with('mensagem.sucesso', "Série '{$serie->nome}' adicionada com sucesso");
+    }
 
-        return to_route('series.index');
+    public function destroy(Series $series)
+    {
+        $series->delete();
+
+        return to_route('series.index')
+            ->with('mensagem.sucesso', 'Série removida com sucesso');
+    }
+
+    public function edit(Series $series)
+    {
+        return view('series.edit')->with('serie', $series);
+    }
+
+    public function update(Series $series, SeriesFormRequest $request)
+    {
+        $series->fill($request->all());
+        $series->save();
+
+        return to_route('series.index')
+            ->with('mensagem.sucesso', "Série '{$series->nome}' atualizada com sucesso");
     }
 }
