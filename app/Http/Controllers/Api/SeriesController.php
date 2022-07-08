@@ -7,6 +7,8 @@ use App\Http\Requests\SeriesFormRequest;
 use App\Models\Series;
 use Illuminate\Http\Request;
 use App\Repositories\SeriesRepository;
+use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class SeriesController extends Controller
 {
@@ -48,8 +50,9 @@ class SeriesController extends Controller
         return $series;
     }
 
-    public function destroy(int $series)
+    public function destroy(int $series, Authenticatable $user)
     {
+        //dd($user->tokenCan('is_admin'));
         Series::destroy($series);
         return response()->noContent();
     }
